@@ -9,8 +9,8 @@ import sounddevice as sd
 SR = 22050
 BUF = 1.0
 HOP=0.4
-FMIN=60
-FMAX=400 # I might change this later
+FMIN=80
+FMAX=200 # I might change this later
 RMS_MIN = 0.01 # I need to change this asw
 JITTER_WIN = 3.0
 
@@ -20,6 +20,10 @@ JITTER_WIN = 3.0
 
 
 
+# rms silent is = 0.005
+# rms talking is 0.05
+# jitter for normal talking is 0.03
+# jitter for jittering is also near 0.02
 
 
 class VoiceSig:
@@ -63,7 +67,7 @@ class VoiceSig:
         if rms < RMS_MIN:
             self.voiced = False
             return
-        f0, vflag, prob = librosa.pyin(y, fmin=FMIN, fmax=FMAX, sr=self.sr)
+        f0, vflag, prob = librosa.pyin(y, fmin=FMIN, fmax=FMAX, sr=self.sr, resolution=0.01, max_transition_rate=100)
         good = f0[~np.isnan(f0)]
         if len(good) <3:
             self.voiced = False
@@ -86,7 +90,7 @@ class VoiceSig:
 
     def get(self):
         if self.jits:
-            jits = float(np.mean([v for _, v in self.jits]))
+            jit = float(np.mean([v for _, v in self.jits]))
         else:
             jit = 0.0
         return {
