@@ -1,11 +1,12 @@
-# import time
-# from collections import deque
-# import numpy as np
-# from mediapipe import Image, ImageFormat
-# from mediapipe.tasks import python as mp_python
-# from mediapipe.tasks.python import vision
+import time
+from collections import deque
+import numpy as np
+import mediapipe as mp
+from mediapipe import Image, ImageFormat
+from mediapipe.tasks import python as mptask
+from mediapipe.tasks.python import vision
 
-# MODEL_P = "models.face_landmarker.task"
+MODEL_P = "models/m.task"
 
 # REYE = (33, 160, 158, 133, 153, 144)
 # LEYE = (362, 385, 387, 263, 373, 380)
@@ -94,6 +95,13 @@
 #                 "ear": None,
 #                 "face_found": False,
 #             }
+opts = vision.FaceLandmarkerOptions(
+    base_options=mptask.BaseOptions(model_asset_path=MODEL_P),
+    running_mode=vision.RunningMode.VIDEO,
+    num_faces=1,
+)
+
+lm = vision.FaceLandmarker.create_from_options(opts)
 
 import cv2
 c = cv2.VideoCapture(0)
@@ -102,13 +110,30 @@ if not c.isOpened():
     print("LHDFS")
     exit()
 print("q to quit")
+t0 = time.time()
 while True:
     ok, f = c.read()
     if not ok:
         print("not ok")
         break
+    h, w = f.shape[:2]
+    rgb = cv2.cvtColor(f, cv2.COLOR_BGR2RGB)
+    img = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
+    ms = int((time.time() -t0)*1000)
+    res = lm.detect_for_video(img, ms)
+
+    if res.face_landmarks:
+        pts = res.face_landmarks[0]
+        for p in pts:
+            x = int(p.x *w)
+            y = int(p.y * h)
+            cv2.circle(f, (x,y), 1, (0, 255, 0), -1)
+    else:
+        cv2.putText(f, "noface", (20,40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255),2)
     cv2.imshow("sus", f)
+
     if cv2.waitKey(1) == ord("q"):
         break
 c.release()
 cv2.destroyAllWindows()
+lm.close()
