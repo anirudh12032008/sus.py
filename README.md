@@ -1,0 +1,2 @@
+# sus.py
+ "lie detector"
