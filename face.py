@@ -8,26 +8,27 @@ from mediapipe.tasks.python import vision
 
 MODEL_P = "models/m.task"
 
-# REYE = (33, 160, 158, 133, 153, 144)
-# LEYE = (362, 385, 387, 263, 373, 380)
+REYE = (33, 160, 158, 133, 153, 144)
+LEYE = (362, 385, 387, 263, 373, 380)
 # MOUTHP = (61, 291, 78, 308)
 # BROWP = (70, 63, 105, 66, 107, 300, 293, 3334, 296, 336)
 # JITTERP = MOUTHP + BROWP
 # IODP = (33, 263)
-# BLINK_EAR = 0.21
-# MIN_BLINK = 1
-# MAX_BLINK = 12
+BLINK_EAR = 0.21
+MIN_BLINK = 1
+MAX_BLINK = 12
 # BLINK_WIN = 10.0
 # JITTER_WIN = 2.0
 
 
-# def eye_ration(pts):
-#     p1, p2, p3, p4, p5, p6 = pts
-#     vert = np.linalg.norm(p2-p6) + np.linalg.norm(p3-p5)
-#     hor = np.linalg.norm(p1-p4)
-#     if hor < 1e-6:
-#         return 0.0
-#     return vert / (2.0*hor)
+def eye_ratio(pts):
+    p1, p2, p3, p4, p5, p6 = pts
+    vert = np.linalg.norm(p2-p6) + np.linalg.norm(p3-p5)
+    hor = np.linalg.norm(p1-p4)
+    if hor < 1e-6:
+        return 0.0
+    return vert / (2.0*hor)
+
 
 # class FaceSignals:
 #     def __init__(self, model=MODEL_P):
@@ -95,6 +96,11 @@ MODEL_P = "models/m.task"
 #                 "ear": None,
 #                 "face_found": False,
 #             }
+
+def topix(landmarks, w, h):
+    return np.array([[lm.x*w, lm.y *h] for lm in landmarks])
+    
+
 opts = vision.FaceLandmarkerOptions(
     base_options=mptask.BaseOptions(model_asset_path=MODEL_P),
     running_mode=vision.RunningMode.VIDEO,
@@ -111,6 +117,14 @@ if not c.isOpened():
     exit()
 print("q to quit")
 t0 = time.time()
+lowest = 999.0
+t0 = time.time()
+blinks =0
+closedf = 0
+fps = 0.0
+lastt = time.time()
+
+
 while True:
     ok, f = c.read()
     if not ok:
@@ -122,18 +136,42 @@ while True:
     ms = int((time.time() -t0)*1000)
     res = lm.detect_for_video(img, ms)
 
+    now = time.time()
+    gap = now - lastt
+    lastt = now
+    if gap >0:
+        fps = ( fps * 0.9) + ((1.0/gap) * 0.1)
+
     if res.face_landmarks:
         pts = res.face_landmarks[0]
+        pix = topix(pts, w, h)
+        ear = (eye_ratio(pix[list(REYE )]) + eye_ratio(pix[list(LEYE)])) /2.0
+        if ear < BLINK_EAR:
+            closedf += 1
+        else:
+            if MIN_BLINK <= closedf <= MAX_BLINK:
+                blinks += 1
+                print("%d for %d frames" % (blinks, closedf)) 
+            closedf = 0
         for p in pts:
             x = int(p.x *w)
             y = int(p.y * h)
             cv2.circle(f, (x,y), 1, (0, 255, 0), -1)
+        col = (0,0, 255) if ear < BLINK_EAR else (0,255,0)
+        cv2.putText(f, "EAR %.3f" % ear, (20,40), cv2.FONT_HERSHEY_COMPLEX, 1, (0,255,0), 2)
+        # cv2.putText(f, "EAR %.3f" % ear, (20,40), cv2.FONT_HERSHEY_COMPLEX, 1, (0,255,0), 2)
+        cv2.putText(f, "blinks %d" % blinks, (20,80), cv2.FONT_HERSHEY_COMPLEX, 1, (0,255,0), 2)
     else:
         cv2.putText(f, "noface", (20,40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255),2)
-    cv2.imshow("sus", f)
+    cv2.putText(f, "fps %.0f" % fps, (20,120), cv2.FONT_HERSHEY_COMPLEX, 1, (0,255,0), 2)
 
-    if cv2.waitKey(1) == ord("q"):
+    cv2.imshow("sus", f)
+    k = cv2.waitKey(1)
+    
+    if k == ord("q"):
         break
+    if k == ord("r"):
+        lowest = 999.0
 c.release()
 cv2.destroyAllWindows()
 lm.close()
