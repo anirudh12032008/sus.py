@@ -16,14 +16,10 @@ JITTER_WIN = 3.0
 
 
 
-
-
-
-
 # rms silent is = 0.005
 # rms talking is 0.05
-# jitter for normal talking is 0.03
-# jitter for jittering is also near 0.02
+# jitter for normal talking is 0.04
+# jitter for jittering is also near 0.08
 
 
 class VoiceSig:
@@ -38,7 +34,7 @@ class VoiceSig:
         self.rms = 0.0
         self.jits = deque()
         junk = np.zeros(int(sr*0.2), dtype=np.float32)
-        librosa.pyin(junk, fmin=FMIN, fmax=FMAX, sr=sr)
+        librosa.yin(junk, fmin=FMIN, fmax=FMAX, sr=sr)
         self.stream = sd.InputStream(
             samplerate=sr,
             channels=1,
@@ -67,8 +63,8 @@ class VoiceSig:
         if rms < RMS_MIN:
             self.voiced = False
             return
-        f0, vflag, prob = librosa.pyin(y, fmin=FMIN, fmax=FMAX, sr=self.sr, resolution=0.01, max_transition_rate=100)
-        good = f0[~np.isnan(f0)]
+        f0 = librosa.yin(y, fmin=FMIN, fmax=FMAX, sr=self.sr)
+        good = f0[(f0>FMIN*1.05)&(f0<FMAX*0.95)]
         if len(good) <3:
             self.voiced = False
             return
@@ -82,7 +78,8 @@ class VoiceSig:
 
         #i hope this works
         steps = np.abs(np.diff(good))
-        self.pitch_jitter = float(np.mean(steps)/self.pitch_mean)
+        new_jit = float(np.mean(steps)/self.pitch_mean)
+        self.pitch_jitter = 0.7*self.pitch_jitter+0.3*new_jit
         now = time.time()
         self.jits.append((now, self.pitch_jitter))
         while self.jits and now - self.jits[0][0] > JITTER_WIN:
