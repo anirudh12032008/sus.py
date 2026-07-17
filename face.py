@@ -95,3 +95,20 @@
 #                 "face_found": False,
 #             }
 
+import cv2
+c = cv2.VideoCapture(0)
+
+if not c.isOpened():
+    print("LHDFS")
+    exit()
+print("q to quit")
+while True:
+    ok, f = c.read()
+    if not ok:
+        print("not ok")
+        break
+    cv2.imshow("sus", f)
+    if cv2.waitKey(1) == ord("q"):
+        break
+c.release()
+cv2.destroyAllWindows()
