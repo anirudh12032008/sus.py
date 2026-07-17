@@ -61,3 +61,36 @@ class FaceSignals:
         if elp < 1.0:
             return 0.0
         return len(self._blinks) * (60.0/elp)
+    
+    def _uptjitter(self, pts, now):
+        reg = pts[list(JITTERP)]
+        iod = np.linalg.norm(pts[IODP[0]] - pts[IODP[1]])
+
+        if self._prevpts is not None and iod > 1e-6:
+            d = reg - self._prevpts
+            d -= d.mean(axis=0)
+            res = np.linalg.norm(d, axis=1).mean()/iod
+            self._jitters.append((now, res))
+        self._prevpts = reg
+        while self._jitters and now - self._jitters[0][0] > JITTER_WIN:
+            self._jitters.popleft()
+    
+    def _jscore(self):
+        if not self._jitters:
+            return 0.0
+        return float(np.mean([v for _, v in self._jitters]))
+    
+    def process(self, f, ts):
+        h, w = f.shape[:2]
+        rgb = f[:,:,::-1]
+        img = Image(image_format=ImageFormat.SRGB, data=np.ascontiguousarray(rgb))
+        res = self._landmarker.detect_for_video(img, ts)
+        now = time.monotonic()
+        if not res.face_landmarks:
+            self._prevpts = None
+            return {
+                'blink_rate': self._blinkrate(now),
+                "jitter_score": self._jscore(),
+                "ear": None,
+                "face_found": False,
+            }
