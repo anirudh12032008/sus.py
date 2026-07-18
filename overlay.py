@@ -91,7 +91,38 @@ def draw(f, score, parts, voiced, calib=None):
 
 
 
+def _warn(f):
+    h, w = f.shape[:2]
+    (tw, th), _ = cv2.getTextSize(WARN, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
+    x = (w - tw) //2
+    y = h-7
+    cv2.rectangle(f, (0, h-WARN_H), (w,h), (0,0,0), -1)
+    cv2.putText(f, WARN, (x,y), cv2.FONT_HERSHEY_COMPLEX, 0.5, (255, 255, 255), 1)
 
+if __name__ == "__main__":
+    # i'm tired so using fake data
+    import math
+    g = Graph()
+    t0 = time.time()
+    print("just checking drawing")
+
+    while True:
+        f = np.full((640, 960, 3), 30, dtype=np.uint8)
+        el = time.time() - t0
+        s = 50 + 45 * math.sin(el * 0.7)
+        g.add(s)
+        parts = {"blink": s *0.4, "face_jit": s *0.35, "pitch_jit": s * 0.25 }
+
+        if el < 5:
+            draw(f, 0, None, True, calib=5-el)
+        else:
+            draw(f, s, parts, voiced=True )
+        
+        cv2.imshow('over', f)
+        if cv2.waitKey(30) == ord('q'):
+            break
+    cv2.destroyAllWindows()
+    
 
 
 
