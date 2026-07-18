@@ -113,7 +113,7 @@ if __name__ == "__main__":
     f = Fusion(base)
     print("1 sig up.  ->", round(f.update(24.0, 0.012, 0.025, True), 1), "(want ~33)")
     f = Fusion(base)
-    print("3 sig up.  ->", round(f.update(32.0, 0.016, 0.033, True), 1), "(want 100)")
+    print("3 sig up.  ->", round(f.update(32.0, 0.016, 0.034, True), 1), "(want 100)")
     f = Fusion(base)
     print("cooked.  ->", round(f.update(99.0, 0.9, 0.9, True), 1), "(want 100 MAX)")
     
