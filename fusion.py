@@ -103,3 +103,29 @@ class Fusion:
             self.hist.popleft()
         return float(np.mean([s for _, s in self.hist]))
     
+if __name__ == "__main__":
+    print("smth is going on gng")
+    base = { "blink" : (20.0, 4.0),
+            "face_jit": (0.01, 0.002),
+            "pitch_jit": (0.02, 0.005),
+            }
+    f = Fusion(base)
+    print("baseline.  ->", round(f.update(20.0, 0.01, 0.02, True), 1), "(want ~0)")
+    f = Fusion(base)
+    print("calmer.  ->", round(f.update(10.0, 0.005, 0.01, True), 1), "(want 0 but not neg)")
+    f = Fusion(base)
+    print("1 sig up.  ->", round(f.update(24.0, 0.012, 0.025, True), 1), "(want ~33)")
+    f = Fusion(base)
+    print("3 sig up.  ->", round(f.update(32.0, 0.016, 0.035, True), 1), "(want 100)")
+    f = Fusion(base)
+    print("cooked.  ->", round(f.update(99.0, 0.9, 0.9, True), 1), "(want 100 MAX)")
+    
+
+
+    print("lets try smth else")
+    f = Fusion(base)
+    a = f.update(24.0, 0.012, 0.025, True)
+    f = Fusion(base)
+    b = f.update(24.0, 0.012, 0.025, False)
+    print("talking 1 sig ", round(a,1))
+    print("silent 1 sig ", round(b,1))
