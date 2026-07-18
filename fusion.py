@@ -5,10 +5,8 @@ import numpy as np
 # please tune in the values if needed cause it would take a while to adjust these
 # weights
 W_BLINK = 0.34
-W_FACE_JIT = 0.33
-W_PITCH_JIT = 0.33
-
-
+W_FACE_JIT = 0.36
+W_PITCH_JIT = 0.30
 
 
 Z_MAX = 3.0
@@ -36,7 +34,6 @@ class Calib:
             self._finish()
         return self.done
     
-
 
 
     def left(self):
@@ -116,7 +113,7 @@ if __name__ == "__main__":
     f = Fusion(base)
     print("1 sig up.  ->", round(f.update(24.0, 0.012, 0.025, True), 1), "(want ~33)")
     f = Fusion(base)
-    print("3 sig up.  ->", round(f.update(32.0, 0.016, 0.035, True), 1), "(want 100)")
+    print("3 sig up.  ->", round(f.update(32.0, 0.016, 0.033, True), 1), "(want 100)")
     f = Fusion(base)
     print("cooked.  ->", round(f.update(99.0, 0.9, 0.9, True), 1), "(want 100 MAX)")
     
