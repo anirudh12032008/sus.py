@@ -60,3 +60,43 @@ class Graph:
         cv2.polylines(f, [arr], False, (0,255,100), 2)
         cv2.circle(f, pts[-1], 4, (255, 255, 255), -1)
 
+def draw(f, score, parts, voiced, calib=None):
+    h, w = f.shape[:2]
+    if calib is not None:
+        cv2.rectangle(f, (0,0), (w,110), (0,0,0), -1)
+        cv2.putText(f, "CALIBRATING %.0fs" % calib, (20, 45), cv2.FONT_HERSHEY_COMPLEX, 1.2, (0, 255, 255), 3)
+        cv2.putText(f, "act normal + talk normal", (20, 85), cv2.FONT_HERSHEY_COMPLEX, 0.8, (200, 200, 200), 2)
+        _warn(f)
+        return f
+    
+    spiking = score >=SPIKE
+    col = (0, 0, 255) if spiking else (0, 255, 100)
+    cv2.putText(f, "%.0f" % score, (20, 70), cv2.FONT_HERSHEY_COMPLEX, 2.0, col, 4)
+    cv2.putText(f, "stress_score", (20,95), cv2.FONT_HERSHEY_COMPLEX, 0.5, (150, 150, 150), 1)
+    if spiking:
+        cv2.rectangle(f, (0,0), (w -1, h-1), (0,0,255), 12)
+        cv2.putText(f, "SUS", (w-160, 70), cv2.FONT_HERSHEY_COMPLEX, 2.0, (0,0,255), 4)
+    # find the culprit
+    if parts:
+        y = 130
+        for name in ("blink", "face_jit", "pitch_jit"):
+            v = parts.get(name, 0.0)
+            cv2.putText(f, "%-9s %5.1f" % (name, v), (20,y), cv2.FONT_HERSHEY_COMPLEX, 0.5, (180,180,180), 1)
+            cv2.rectangle(f, (140, y-8), (140 + int(v*1.5), y-2), (0,200,255), -1)
+            y += 22
+    if not voiced:
+        cv2.putText(f, "no voice ", (20, y+5), cv2.FONT_HERSHEY_COMPLEX, 0.45, (100, 100, 100), 1)
+    _warn(f)
+    return f
+
+
+
+
+
+
+
+
+
+
+
+
