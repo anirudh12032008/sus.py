@@ -47,3 +47,17 @@ class Calib:
                 self.base[k] = (float(np.mean(vals)), float(np.std(vals)))
         self.done= True
 
+def normalise(x, base):
+    # ahh mathsssssss
+    mean, std = base
+    if std < MIN_STD:
+        return 0.0
+    z = (x - mean)/std
+    if z <0:
+        return 0.0
+    if z > Z_MAX:
+        return Z_MAX
+    return z
+
+
+
